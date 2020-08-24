@@ -330,7 +330,6 @@ export default [
                   'enterprise-with-raft',
                   'enterprise-dr-with-raft',
                   'enterprise-perf-with-raft',
-                  'enterprise-best-practice',
                 ],
               },
             ],
