@@ -293,6 +293,9 @@ export default [
   {
     category: 'plugin',
   },
+  {
+    category: 'plugin-portal',
+  },
   '----------------',
   {
     category: 'what-is-vault',
