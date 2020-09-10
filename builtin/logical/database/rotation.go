@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/vault/sdk/database/dbplugin"
+	"github.com/hashicorp/vault/sdk/database/newdbplugin"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/helper/consts"
 	"github.com/hashicorp/vault/sdk/helper/locksutil"
@@ -332,7 +333,7 @@ func (b *databaseBackend) setStaticAccount(ctx context.Context, s logical.Storag
 	// associated with it
 	newPassword := input.Password
 	if newPassword == "" {
-		newPassword, err = generatePassword(ctx, dbi.database, b.System(), dbConfig.PasswordPolicy)
+		newPassword, err = dbi.database.GeneratePassword(ctx, b.System(), dbConfig.PasswordPolicy)
 		if err != nil {
 			return output, err
 		}
@@ -357,7 +358,16 @@ func (b *databaseBackend) setStaticAccount(ctx context.Context, s logical.Storag
 		}
 	}
 
-	err = changeUserPassword(ctx, dbi.database, input.Role.StaticAccount.Username, newPassword, input.Role.Statements.Rotation)
+	updateReq := newdbplugin.UpdateUserRequest{
+		Username: input.Role.StaticAccount.Username,
+		Password: &newdbplugin.ChangePassword{
+			NewPassword: newPassword,
+			Statements: newdbplugin.Statements{
+				Commands: input.Role.Statements.Rotation,
+			},
+		},
+	}
+	_, err = dbi.database.UpdateUser(ctx, updateReq)
 	if err != nil {
 		b.CloseIfShutdown(dbi, err)
 		return output, errwrap.Wrapf("error setting credentials: {{err}}", err)
